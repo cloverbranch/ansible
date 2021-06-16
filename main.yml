@@ -1,0 +1,57 @@
+---
+   - name: installing httpd and mod_ssl
+     yum:
+      name: "{{ item }}"
+      state: installed
+     with_items:
+       - httpd
+       - git
+       - mod_ssl
+   - name: starting service
+     service:
+      name: httpd
+      state: started
+   - name: Clone git to a local server
+     git:
+       repo: https://github.com/cloverbranch/ansible.git
+       dest: "/var/www/html/mysite"
+   - name: Ansible create file if it doesn't exist example
+     file:
+       path: "/etc/httpd/conf.d/web02.conf"
+       state: touch
+   - name: genrate private key
+     openssl_privatekey: path=/etc/ssl/certs/fatty.key
+   - name: genrate csr
+     openssl_csr:
+          path: /etc/ssl/certs/fatty.csr
+          privatekey_path: /etc/ssl/certs/fatty.key
+          common_name: redhatme
+          country_name: IN
+          organization_name: Demo
+   - name: Genrate a self signed certificate
+     openssl_certificate:
+          csr_path: /etc/ssl/certs/fatty.csr
+          path: /etc/ssl/certs/fatty.crt
+          privatekey_path: /etc/ssl/certs/fatty.key
+          provider: selfsigned
+   - name: Ansible Insert multiple lines using blockinfile
+     blockinfile:
+       dest: /etc/httpd/conf.d/web02.conf
+       block: |
+         <virtualHost localhost:443>
+         serverAdmin root@localhost
+         serverName localhost
+         DocumentRoot /var/www/html
+         DirectoryIndex index.html
+         SSLEngine on
+         SSLCertificatefile /etc/ssl/certs/fatty.crt
+         SSLCertificateKeyfile /etc/ssl/certs/fatty.key
+         </virtualHost>
+         <Directory /var/www/html>
+         Require all granted
+         </Directory>
+       backup: no
+   - name: restarting service
+     service:
+       name: httpd
+       state: restarted
