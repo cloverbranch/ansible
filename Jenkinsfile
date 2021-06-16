@@ -4,9 +4,6 @@ pipeline {
     stages {
         stage('cloning') {
             steps {
-                git branch: '**',credentialsId: '', changelog: true, poll: true, url: 'https://github.com/cloverbranch/ansible.git'
-                echo 'cloning...'
-                sh 'git branch -a'
                 echo 'Done...'
             }
         }
